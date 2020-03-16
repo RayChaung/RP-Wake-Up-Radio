@@ -46,7 +46,9 @@ $ gpio edge <GPIO> rising
 ```
 
 *Simple auto run command on boot*
+
 put the command in /etc/rc.local
+
 http://www.theunixschool.com/2012/06/insert-line-before-or-after-pattern.html
 
 Any `RFID` is a 64 bit value entered as a colon separated sequence of 8 bytes
@@ -55,7 +57,7 @@ Any `RFID` is a 64 bit value entered as a colon separated sequence of 8 bytes
 # Some Error
 
 1. **Unable to open SPI device: No such file or directory**
-Check does the device exist (ls -l /dev/spi*).
+   Check does the device exist (ls -l /dev/spi*).
 If not enable SPI config:
 ```shell
 $ sudo raspi-config
@@ -63,8 +65,8 @@ $ sudo raspi-config
 choose **5.Interfacing Options** and enable SPI
 
 2. **Failed to wait for RX(or TX) interrupt**
-Check is GPIO on Raspberry Pi configured as interrupt source.
-If not :
+   Check is GPIO on Raspberry Pi configured as interrupt source.
+   If not :
 ```shell
 $ gpio edge <GPIO> rising
 ```
