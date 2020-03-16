@@ -28,9 +28,15 @@ popd
 
 # auto config gpio pin
 # edit /etc/rc.local
-echo [... modifying /etc/rc.local file];
-awk '/# rc.local/{print "gpio edge 25 rising"}1' /etc/rc.local > temp.local
-cat temp.local > /etc/rc.local
-rm temp.local
+grep -q "gpio edge 25 rising" /etc/rc.local
+if [ $? -eq 1 ];
+then
+	echo [... modifying /etc/rc.local file];
+	awk '/# rc.local/{print "gpio edge 25 rising"}1' /etc/rc.local > temp.local
+	cat temp.local > /etc/rc.local
+	rm temp.local
+else
+	echo [... already modifying /etc/rc.local file];
+fi
 
 echo [*** done! ***]
