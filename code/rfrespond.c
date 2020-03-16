@@ -1,19 +1,11 @@
 /* rfrespond
-   Copyright (C) 2015  Werner Hein
+Copyright (C) 2020  Ray, Chang
 
-   This program is free software; you can redistribute it and/or
-   modify it under the terms of the GNU General Public License
-   as published by the Free Software Foundation; either version 2
-   of the License, or (at your option) any later version.
-
-   This program is distributed in the hope that it will be useful,
-   but WITHOUT ANY WARRANTY; without even the implied warranty of
-   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-   GNU General Public License for more details.
-
-   You should have received a copy of the GNU General Public License
-   along with this program; if not, write to the Free Software
-   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA. */
+This program is free software; you can redistribute it and/or
+modify it under the terms of the GNU General Public License
+as published by the Free Software Foundation; either version 2
+of the License, or (at your option) any later version.
+ */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -29,8 +21,8 @@ void readConfig(char *fileName, char clist[2][30])
     int c;
 
     if (file == NULL) {
-			fprintf(stderr, "No config file.");
-			fprintf(stderr, "Usage: rfrespond ll:oo:cc:aa:ll:xx:RF:ID GPIO#\n");
+			fprintf(stderr, "Config file cannot find in /home/pi/myConfig.");
+			fprintf(stderr, "Usage: rfrespond opt.[localRFID] [GPIO]\n");
 			exit(EXIT_FAILURE);
 	} //could not open file
 
@@ -52,8 +44,6 @@ void readConfig(char *fileName, char clist[2][30])
     // terminate with the null character
     item[n] = '\0';
     strcpy(clist[1], item); 
-
-    //return clist;
 }
 
 

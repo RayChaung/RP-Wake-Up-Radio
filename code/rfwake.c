@@ -1,19 +1,11 @@
 /* rfwake
-Copyright (C) 2015  Werner Hein
+Copyright (C) 2020  Ray, Chang
 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License
 as published by the Free Software Foundation; either version 2
 of the License, or (at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with this program; if not, write to the Free Software
-Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA. */
+ */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -24,22 +16,63 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA. 
 #include "rfm69bios.h"
 #endif
 
+void readConfig(char *fileName, char clist[2][30])
+{
+    FILE *file = fopen(fileName, "r");
+    int c;
+
+    if (file == NULL) {
+			fprintf(stderr, "Config file cannot find in /home/pi/myConfig.");
+			fprintf(stderr, "Usage: rfwake [calledRFID] opt.[localRFID] [GPIO]\n");
+			exit(EXIT_FAILURE);
+	} //could not open file
+
+   char item[30] = {};
+	
+	size_t n = 0;
+    while ((c = fgetc(file)) != EOF)
+    {
+		if (c == ' ') {
+			item[n] = '\0';
+			strcpy(clist[0], item);
+			memset(&item[0], 0, sizeof(item));
+			n = 0;
+		}
+		else
+			item[n++] = (char) c;
+    }
+
+    // terminate with the null character
+    item[n] = '\0';
+    strcpy(clist[1], item); 
+}
+
 int main(int argc, char* argv[]) {
    int fd, gpio, i, mode, res, nbr=1, gotyou=0;
    char *a1p, *a2p;
    unsigned char locrfid[IDSIZE], remrfid[IDSIZE], recrfid[IDSIZE];
 
-   if (argc == 4) {
-      for (i = 0, a1p = argv[1], a2p = argv[2]; i < IDSIZE; i++, a1p++, a2p++) {
-         locrfid[i] = strtoul(a1p,&a1p,16);
-         remrfid[i] = strtoul(a2p,&a2p,16);
-      }
-      gpio = atoi(argv[3]);
-   }
-   else {
-      fprintf(stderr, "Usage: rfwake ll:oo:cc:aa:ll:xx:RF:ID rr:ee:mm:oo:tt:ee:RF:ID GPIO#\n");
+   // *** Config ***
+	char config[2][30];
+   
+   if (argc == 4) {  // case: rfwake [calledRFID] [localRFID] [GPIO]
+      strcpy(config[0], argv[2]);
+		strcpy(config[1], argv[3]);
+   } else if (argc == 2) {  // case: rfwake [calledRFID]
+      readConfig("/home/pi/myConfig", config); 
+   } else {  // other case
+      fprintf(stderr, "Usage: rfwake rr:ee:mm:oo:tt:ee:RF:ID ll:oo:cc:aa:ll:xx:RF:ID GPIO#\n");
       exit(EXIT_FAILURE);
    }
+   
+   for (i = 0, a1p = argv[1], a2p = config[0]; i < IDSIZE; i++, a1p++, a2p++) {
+         remrfid[i] = strtoul(a1p,&a1p,16);
+         locrfid[i] = strtoul(a2p,&a2p,16);
+      }
+   gpio = atoi(config[1]);
+   
+   fprintf(stdout, "Local RFID:%s, GPIO:%d\n",config[0] , gpio); 
+   fprintf(stdout, "Wake Remote RFID:%s\n",argv[1]); 
 
    // *** Setup ***
    if (wiringPiSetupSys() < 0) {
