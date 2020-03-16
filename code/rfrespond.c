@@ -23,6 +23,38 @@
 #ifndef RFM69BIOS_H
 #include "rfm69bios.h"
 #endif
+void readConfig(char *fileName, char clist[2][30])
+{
+    FILE *file = fopen(fileName, "r");
+    int c;
+
+    if (file == NULL) {
+			fprintf(stderr, "No config file.");
+			fprintf(stderr, "Usage: rfrespond ll:oo:cc:aa:ll:xx:RF:ID GPIO#\n");
+			exit(EXIT_FAILURE);
+	} //could not open file
+
+    char item[30] = {};
+	
+	size_t n = 0;
+    while ((c = fgetc(file)) != EOF)
+    {
+		if (c == ' ') {
+			item[n] = '\0';
+			strcpy(clist[0], item);
+			memset(&item[0], 0, sizeof(item));
+			n = 0;
+		}
+		else
+			item[n++] = (char) c;
+    }
+
+    // terminate with the null character
+    item[n] = '\0';
+    strcpy(clist[1], item); 
+
+    //return clist;
+}
 
 
 int main(int argc, char* argv[]) {
@@ -31,18 +63,22 @@ int main(int argc, char* argv[]) {
 	FILE* fdlog;
 	char *ap;
 	unsigned char locrfid[IDSIZE], remrfid[IDSIZE];
-
-	if (argc == 3) {
-		ap = argv[1];
-		for (i = 0, ap = argv[1]; i < IDSIZE; i++,ap++) {
-			locrfid[i] = strtoul(ap,&ap,16);
-		}
-		gpio = atoi(argv[2]);
-	}
+	
+	// *** Config ***
+	char config[2][30];
+	
+	if (argc != 3) readConfig("/home/pi/myConfig", config); 
 	else {
-		fprintf(stderr, "Usage: rfrespond ll:oo:cc:aa:ll:xx:RF:ID GPIO#\n");
-		exit(EXIT_FAILURE);
+		strcpy(config[0], argv[1]);
+		strcpy(config[1], argv[2]);
 	}
+	
+	ap = config[0];
+	for (i = 0, ap = config[0]; i < IDSIZE; i++,ap++) {
+		locrfid[i] = strtoul(ap,&ap,16);
+	}
+	gpio = atoi(config[1]);
+	fprintf(stdout, "RFID:%s, GPIO:%d\n",config[0] , gpio); 
 
 	// *** Setup ***
 	if (wiringPiSetupSys() < 0) {
