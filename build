@@ -26,4 +26,10 @@ done
 
 popd
 
+# auto config gpio pin
+# edit /etc/rc.local
+awk '/# rc.local/{print "gpio edge 25 rising"}1' /etc/rc.local > temp.local
+cat temp.local > /etc/rc.local
+rm temp.local
+
 echo [*** done! ***]
