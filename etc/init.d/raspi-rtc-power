@@ -1,0 +1,63 @@
+#!/bin/sh
+
+### BEGIN INIT INFO
+# Provides:          raspi-rtc-power
+# Required-Start:    kmod
+# Required-Stop:     halt
+# Should-Start: 
+# Should-Stop:
+# X-Start-Before:
+# X-Stop-After:      networking
+# Default-Start:     S
+# Default-Stop:      0
+# Short-Description: on/off Raspi-RTC-Power
+# Description:       switching on/off power via RTC chip or Radio module on Raspi extension board
+### END INIT INFO
+
+set -e
+
+. /lib/lsb/init-functions
+
+ALARM=0;
+I2CBUS=0;
+
+if [ -f /etc/default/rtc ]; then
+	. /etc/default/rtc
+fi
+
+if [ -f /etc/wakealarm ]; then
+	ALARM=$(cat /etc/wakealarm)
+fi
+
+case "${1:-}" in
+  stop)
+        log_action_begin_msg "Configure wake on Radio "
+        /usr/local/bin/rfwait $RFID $GPIO
+        ES=$?
+        log_action_end_msg $ES
+
+        log_action_begin_msg "Switching off RasPi-RTC-Power "
+        /usr/local/bin/rtc-power $I2CBUS $ALARM
+        ES=$?
+        log_action_end_msg $ES
+        ;;
+
+  start)
+        log_action_begin_msg "Switching on RasPi-RTC-Power "
+        modprobe i2c-dev
+        i2cset -f -y $I2CBUS 0x6f 0x07 0x00
+        ES=$?
+        log_action_end_msg $ES
+
+        log_action_begin_msg "Start Radio respond daemon "
+        /usr/local/bin/gpio edge $GPIO rising
+        /usr/local/bin/rfrespond $RFID $GPIO
+        ES=$?
+        log_action_end_msg $ES
+        ;;
+
+  *)
+        echo "Usage: ${0:-} {start|stop}" >&2
+        exit 1
+        ;;
+esac

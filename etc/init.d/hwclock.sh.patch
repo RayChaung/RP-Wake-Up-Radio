@@ -1,0 +1,46 @@
+--- hwclock.sh.orig	2012-12-22 06:57:47.000000000 +0100
++++ hwclock.sh	2015-11-01 11:46:31.608522983 +0100
+@@ -21,10 +21,10 @@
+ 
+ ### BEGIN INIT INFO
+ # Provides:          hwclock
+-# Required-Start:    mountdevsubfs
++# Required-Start:    kmod
+ # Required-Stop:     $local_fs
+ # Default-Start:     S
+-# X-Start-Before:    checkroot
++# X-Start-Before: 
+ # Default-Stop:      0 6
+ ### END INIT INFO
+ 
+@@ -33,6 +33,7 @@
+ HWCLOCKACCESS=yes
+ HWCLOCKPARS=
+ HCTOSYS_DEVICE=rtc0
++I2CBUS=0
+ 
+ # We only want to use the system timezone or else we'll get
+ # potential inconsistency at startup.
+@@ -43,6 +44,7 @@
+     [ ! -x /sbin/hwclock ] && return 0
+     [ ! -r /etc/default/rcS ] || . /etc/default/rcS
+     [ ! -r /etc/default/hwclock ] || . /etc/default/hwclock
++    [ ! -r /etc/default/rtc ] || . /etc/default/rtc
+ 
+     . /lib/lsb/init-functions
+     verbose_log_action_msg() { [ "$VERBOSE" = no ] || log_action_msg "$@"; }
+@@ -58,11 +60,11 @@
+ 	    # If the admin deleted the hwclock config, create a blank
+ 	    # template with the defaults.
+ 	    if [ -w /etc ] && [ ! -f /etc/adjtime ] && [ ! -e /etc/adjtime ]; then
+-	        printf "0.0 0 0.0\n0\nUTC" > /etc/adjtime
++	        printf "0.0 0 0.0\n0\nUTC\n" > /etc/adjtime
+ 	    fi
+ 
+-	    if [ -d /run/udev ] || [ -d /dev/.udev ]; then
+-		return 0
++	    if [ ! -c /dev/HCTOSYS_DEVICE ]; then
++	        echo mcp7941x 0x6f > /sys/bus/i2c/devices/i2c-$I2CBUS/new_device
+ 	    fi
+ 
+ 	    if [ "$HWCLOCKACCESS" != no ]; then

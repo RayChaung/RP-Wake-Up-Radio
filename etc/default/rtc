@@ -1,0 +1,9 @@
+# Default settings for Raspi-RTC-Power. This file is sourced by /bin/sh from
+# /etc/init.d/raspi-rtc-power.
+
+# I2C Bus the RTC chip is connected to
+I2CBUS=1
+
+# Radio Module, RFID and GPIO
+RFID=01:23:45:67:89:AB:CD:EF
+GPIO=25
