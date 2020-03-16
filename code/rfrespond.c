@@ -53,7 +53,13 @@ int main(int argc, char* argv[]) {
 	FILE* fdlog;
 	char *ap;
 	unsigned char locrfid[IDSIZE], remrfid[IDSIZE];
-	
+
+	// *** Protect ***
+	if(geteuid() != 0) {
+		fprintf(stderr, "Hint: call me as root!\n");
+		exit(EXIT_FAILURE);
+	}
+
 	// *** Config ***
 	char config[2][30];
 	
