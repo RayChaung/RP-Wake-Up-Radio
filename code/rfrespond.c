@@ -233,7 +233,7 @@ int main(int argc, char* argv[]) {
 				exit(EXIT_FAILURE);
 			}
 		} while ((mode & 0x08) == 0);
-		fprintf(fdlog,"ACKed %d. Call from Station: ",nbr++);
+		fprintf(fdlog,"ACKed %d. Call from Station: ",nbr);
 		fprintf(stdout,"ACKed %d. Call from Station: ",nbr++);
 		for (i = 0; i < IDSIZE; i++) {
 			if(i != 0) {
