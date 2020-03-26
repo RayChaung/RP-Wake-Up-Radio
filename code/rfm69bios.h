@@ -1,5 +1,6 @@
 #define RFM69BIOS_H
 
+#include <stdio.h>
 #include <stdlib.h>
 #include <wiringPi.h>
 #include <wiringPiSPI.h>
@@ -9,6 +10,7 @@
 #define IDSIZE 8
 
 int rfm69getState(void);
+int rfm69getAllState(void);
 int rfm69txdata(const unsigned char*, unsigned int);
 int rfm69rxdata(unsigned char*, unsigned int);
 int rfm69STDBYMode(void);

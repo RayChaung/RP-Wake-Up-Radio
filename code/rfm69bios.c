@@ -65,15 +65,25 @@ int rfm69init(unsigned char* spibuffer, const unsigned char* rfid) {
 int rfm69getState() {
 	unsigned char spibuffer[3];
 	int status = 0;
+	int statusP = 0;
 	spibuffer[0] = 0x01 & 0x7F; // Address + read cmd bit
 	if (wiringPiSPIDataRW(SPI_DEVICE, spibuffer, 2) < 0) exit(-1);
-	status = spibuffer[1] << 16;
+	status 	= spibuffer[1] << 16;
+	// debug printf
+	statusP = spibuffer[1];
+	//printf("OpMode(0x01)\t:%02X\n", statusP);
 
 	spibuffer[0] = 0x27 & 0x7F; // Address + read cmd bit
-	if (wiringPiSPIDataRW(SPI_DEVICE, spibuffer, 3) < 0) exit(-2);
-
+	if (wiringPiSPIDataRW(SPI_DEVICE, spibuffer, 3) < 0) exit(-2);	
 	status |= spibuffer[1] << 8;
 	status |= spibuffer[2];
+	// debug printf
+	statusP = 0; statusP |= spibuffer[1];
+	//printf("IrqFlag1(0x27)\t:%02X\n", statusP);
+	statusP = 0; statusP |= spibuffer[2];
+	//printf("IrqFlag2(0x28)\t:%02X\n", statusP);
+	
+	
 	return status;
 }
 
@@ -142,4 +152,25 @@ int rfm69ListenMode(const unsigned char* rfid) {
 	spibuffer[1] = 0x44; // Listen Mode (+ STDBY Mode)
 	if (wiringPiSPIDataRW(SPI_DEVICE, spibuffer, 2) < 0) exit(2);
 	return 0;
+}
+
+int rfm69getAllState() {
+    printf("ST | 08, 19, 2A, 3B, 4C, 5D, 6E, 7F, | EN\n");
+    printf("-----------------------------------------\n");
+    unsigned char spibuffer[2];
+    printf("00 | ");
+    for(int i = 0; i < 80; i++) {
+        int status = 0;
+        spibuffer[0] = i & 0x7F; // Address + read cmd bit
+	    if (wiringPiSPIDataRW(SPI_DEVICE, spibuffer, 2) < 0) exit(-1);
+        status = spibuffer[1];
+        printf("%02X, ", status);
+        if((i + 1)% 8 == 0) {
+            printf("| %02X\n", i);
+            if (i == 79) break;
+            printf("%02X | ", i+1);
+		}
+    }
+    printf("\n");
+    return 0;
 }
