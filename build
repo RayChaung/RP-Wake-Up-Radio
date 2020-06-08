@@ -14,11 +14,11 @@ pushd code
 
 i=rfm69bios
 echo [... building $i]
-gcc -c $i.c -lWiringPi
+g++ -c $i.c -lWiringPi
 
-for i in rfrespond rfwait rfwake; do
+for i in rfrespond rfwait rfwake rfwakes; do
     echo [... installing $i];
-    gcc $i.c rfm69bios.o -o $i -lwiringPi;
+    g++ $i.c rfm69bios.o -o $i -lwiringPi;
     chown root:root $i;
     chmod 0755 $i;
     cp $i /usr/local/bin/;
