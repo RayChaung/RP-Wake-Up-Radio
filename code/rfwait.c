@@ -15,7 +15,7 @@ of the License, or (at your option) any later version.
 #ifndef RFM69BIOS_H
 #include "rfm69bios.h"
 #endif
-void readConfig(char *fileName, char clist[2][30])
+void readConfig(char const *fileName, char clist[2][30])
 {
     FILE *file = fopen(fileName, "r");
     int c;
