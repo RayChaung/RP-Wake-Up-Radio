@@ -78,11 +78,17 @@ std::vector <Target> readTargets(){
 		else
 			item[n++] = (char) c;
 	}
-	
-	
+
 	return tlist;
 	//fprintf(stdout, "%s\n", tt);
 	fclose(file);
+}
+
+void printrfid(unsigned char rfid[]) {
+	for (int i = 0; i < IDSIZE; i++) {
+		if(i != 0) fprintf(stdout,":");
+		fprintf(stdout, "%02x", rfid[i]);
+	}
 }
 
 int main(int argc, char* argv[]) {
@@ -105,17 +111,17 @@ int main(int argc, char* argv[]) {
 		locrfid[i] = strtoul(ap,&ap,16);
 	}
 	gpio = atoi(config[1]);
-//-----------------------------------------------------------------------
+	//-----------------------------------------------------------------------
 	// *** Debug ***
 	unsigned char remrfdeb[IDSIZE];
 	for (i = 0, ap = Targetlist[0].rem; i < IDSIZE; i++, ap++) {
 		remrfdeb[i] = strtoul(ap,&ap,16);
 	}
 	//fprintf(stdout, "%u\n", remrfdeb);
-//-----------------------------------------------------------------------
-	
+	//-----------------------------------------------------------------------
+
 	fprintf(stdout, "Local RFID:%s, GPIO:%d\n",config[0] , gpio); 
-	
+
 	//for (int i = 0, a1p = Targetlist[0].rem; i < IDSIZE; i++, a1p++) {
 	//	t.remrfid[i] = strtoul(a1p,&a1p,16);
 	//}
@@ -126,20 +132,15 @@ int main(int argc, char* argv[]) {
 			it->remrfid[i] = strtoul(ap,&ap,16);
 		}
 		//memcpy(&it->remrfid, &remrfdeb, sizeof remrfdeb);
-//----------------------------------------------------------------------
+		//----------------------------------------------------------------------
 		// *** Debug Print ***
 		//fprintf(stdout, "Wake Remote RFID[%d]:%s ", ++counter, it->rem);
 		fprintf(stdout, "Wake Remote RFID[%d]: ", ++counter);
-		for (i = 0; i < IDSIZE; i++) {
-			if(i != 0) fprintf(stdout,":");
-			fprintf(stdout, "%02x", it->remrfid[i]);
-		}
-//----------------------------------------------------------------------
+		printrfid(it->remrfid);
+		//----------------------------------------------------------------------
 		fprintf(stdout, "\n");
 	}
 
-	unsigned char remrfid[IDSIZE];
-	memcpy(&remrfid, &Targetlist[1].remrfid, sizeof remrfdeb);
 
 	// *** Setup ***
 	if (wiringPiSetupSys() < 0) {
@@ -152,79 +153,78 @@ int main(int argc, char* argv[]) {
 		exit(EXIT_FAILURE);
 	}
 
-	for (;;) {
-		// *** Transmission ***
-		// prepare for TX
-		if (rfm69startTxMode(remrfid)) {
-			fprintf(stderr, "Failed to enter TX Mode\n");
-			exit(EXIT_FAILURE);
-		}
-		// write Tx data
-		rfm69txdata(&remrfid[IDSIZE-1],1);
-		rfm69txdata(locrfid,IDSIZE);
-		// wait for HW interrupt(s) and check for TX_Sent state, takes approx. 853.3µs
-		do {
-			if(waitForInterrupt(gpio, 1) <= 0) { // wait for GPIO_xx
-				fprintf(stderr, "Failed to wait on TX interrupt\n");
+	do {
+		for (auto it = Targetlist.begin(); it != Targetlist.end(); it++) {
+			unsigned char remrfid[IDSIZE];
+			memcpy(&remrfid, &it->remrfid, sizeof it->remrfid);
+			// *** Transmission ***
+			// prepare for TX
+			if (rfm69startTxMode(remrfid)) {
+				fprintf(stderr, "Failed to enter TX Mode\n");
 				exit(EXIT_FAILURE);
 			}
-			mode = rfm69getState();
-			if (mode < 0) {
-				fprintf(stderr, "Failed to read RFM69 Status\n");
-				exit(EXIT_FAILURE);
-			}
-		} while ((mode & 0x08) == 0);
-		fprintf(stdout, "%d. Wake-Telegram sent.\n", nbr++);
+			// write Tx data
+			rfm69txdata(&remrfid[IDSIZE-1],1);
+			rfm69txdata(locrfid,IDSIZE);
+			// wait for HW interrupt(s) and check for TX_Sent state, takes approx. 853.3µs
+			do {
+				if(waitForInterrupt(gpio, 1) <= 0) { // wait for GPIO_xx
+					fprintf(stderr, "Failed to wait on TX interrupt\n");
+					exit(EXIT_FAILURE);
+				}
+				mode = rfm69getState();
+				if (mode < 0) {
+					fprintf(stderr, "Failed to read RFM69 Status\n");
+					exit(EXIT_FAILURE);
+				}
+			} while ((mode & 0x08) == 0);
+			fprintf(stdout, "%d. Wake-Telegram sent.\n", nbr++);
 
-		// switch back to STDBY Mode
-		if (rfm69STDBYMode()) {
-			fprintf(stderr, "Failed to enter STDBY Mode\n");
-			exit(EXIT_FAILURE);
-		}
-
-		// *** Reception ***
-		// prepare for RX
-		if (rfm69startRxMode(locrfid)) {
-			fprintf(stderr, "Failed to enter RX Mode\n");
-			exit(EXIT_FAILURE);
-		}
-		// wait for HW interrupt(s) and check for CRC_Ok state
-		res = waitForInterrupt(gpio, 84); // wait for GPIO_xx
-		if (res < 0) {
-			fprintf(stderr, "Failed to wait on RX interrupt\n");
-			exit(EXIT_FAILURE);
-		}
-		else if (res > 0) { // in case of reception ...
-			mode = rfm69getState();
-			if (mode < 0) {
-				fprintf(stderr, "Failed to read RFM69 Status\n");
+			// switch back to STDBY Mode
+			if (rfm69STDBYMode()) {
+				fprintf(stderr, "Failed to enter STDBY Mode\n");
 				exit(EXIT_FAILURE);
 			}
-			if ((mode & 0x02) == 0x02) { // ... and CrcOk ...
-				// read remote RF ID from FIFO
-				rfm69rxdata(recrfid, 1); // skip last byte of called RF ID
-				rfm69rxdata(recrfid, IDSIZE); // read complete remote RF ID
-				// check received vs. called remote RF ID
-				for (i = 0, gotyou = 1; i < IDSIZE; i++) // ... and RF ID equal ...
-					if (remrfid[i] != recrfid[i]) gotyou = 0; // ... then done
-				if (!gotyou) delay(85); // wait long enough if wrong RF ID received
+
+			// *** Reception ***
+			// prepare for RX
+			if (rfm69startRxMode(locrfid)) {
+				fprintf(stderr, "Failed to enter RX Mode\n");
+				exit(EXIT_FAILURE);
+			}
+			// wait for HW interrupt(s) and check for CRC_Ok state
+			res = waitForInterrupt(gpio, 84); // wait for GPIO_xx
+			if (res < 0) {
+				fprintf(stderr, "Failed to wait on RX interrupt\n");
+				exit(EXIT_FAILURE);
+			}
+			else if (res > 0) { // in case of reception ...
+				mode = rfm69getState();
+				if (mode < 0) {
+					fprintf(stderr, "Failed to read RFM69 Status\n");
+					exit(EXIT_FAILURE);
+				}
+				if ((mode & 0x02) == 0x02) { // ... and CrcOk ...
+					// read remote RF ID from FIFO
+					rfm69rxdata(recrfid, 1); // skip last byte of called RF ID
+					rfm69rxdata(recrfid, IDSIZE); // read complete remote RF ID
+					// check received vs. called remote RF ID
+					for (i = 0, gotyou = 1; i < IDSIZE; i++) // ... and RF ID equal ...
+						if (remrfid[i] != recrfid[i]) gotyou = 0; // ... then done
+					if (!gotyou) delay(85); // wait long enough if wrong RF ID received
+				}
+			}
+			// switch back to STDBY Mode
+			if (rfm69STDBYMode()) {
+				fprintf(stderr, "Failed to enter STDBY Mode\n");
+				exit(EXIT_FAILURE);
 			}
 		}
-		// switch back to STDBY Mode
-		if (rfm69STDBYMode()) {
-			fprintf(stderr, "Failed to enter STDBY Mode\n");
-			exit(EXIT_FAILURE);
-		}
-		if (gotyou)
-			break;
-	} 
+	} while(!gotyou);
 
 	// output of remote RF ID
 	fprintf(stdout, "ACK received from called Station RF ID ");
-	for (i = 0; i < IDSIZE; i++) {
-		if(i != 0) fprintf(stdout,":");
-		fprintf(stdout, "%02x", recrfid[i]);
-	}
+	printrfid(recrfid);
 	fprintf(stdout,"\n");
 
 	close(fd);
