@@ -15,11 +15,16 @@
 #include <iostream>
 #include <fstream>
 #include <vector>
+// TIME HEADER
+#include <chrono>
+#include <ctime>
 
 
 #ifndef RFM69BIOS_H
 #include "rfm69bios.h"
 #endif
+
+#define LogDIR "/home/pi/Desktop/log/"
 
 struct Target {
 	char rem[30];	
@@ -89,6 +94,22 @@ void printrfid(unsigned char rfid[]) {
 		if(i != 0) fprintf(stdout,":");
 		fprintf(stdout, "%02x", rfid[i]);
 	}
+}
+
+char* toTime(std::chrono::system_clock::time_point target) {
+	time_t temp = std::chrono::system_clock::to_time_t(target);
+	char* result = ctime(&temp);
+	return result;
+}
+
+std::string read_gps() {
+	std::fstream fgps;
+	std::string dir = LogDIR, lat, lng, result;
+	fgps.open(dir + "gps.log", std::fstream::in);
+	fgps >> lat >> lng;
+	result = lat + " " + lng;
+	fgps.close();
+	return result;
 }
 
 int main(int argc, char* argv[]) {
@@ -230,6 +251,14 @@ int main(int argc, char* argv[]) {
 				fprintf(stdout, "ACK received from called Station RF ID ");
 				printrfid(recrfid);
 				fprintf(stdout,"\n");
+				
+				// write into log file
+				auto now = std::chrono::system_clock::now();
+				std::fstream flog;
+				std::string logfname(it->rem);
+				flog.open (LogDIR + logfname + ".log", std::fstream::in | std::fstream::out | std::fstream::app);
+				flog << "ACK receive at:\t\t\t" << read_gps() << "\t" << toTime(now);
+				flog.close();
 				// recover `gotyou` switch
 				gotyou = 0;
 			}
