@@ -154,7 +154,7 @@ int main(int argc, char* argv[]) {
 	}
 
 	do {
-		for (auto it = Targetlist.begin(); it != Targetlist.end(); it++) {
+		for (auto it = Targetlist.begin(); it != Targetlist.end();) {
 			unsigned char remrfid[IDSIZE];
 			memcpy(&remrfid, &it->remrfid, sizeof it->remrfid);
 			// *** Transmission ***
@@ -178,7 +178,7 @@ int main(int argc, char* argv[]) {
 					exit(EXIT_FAILURE);
 				}
 			} while ((mode & 0x08) == 0);
-			fprintf(stdout, "%d. Wake-Telegram sent.\n", nbr++);
+			fprintf(stdout, "%d. Wake-Telegram sent to %s.\n", nbr++, it->rem);
 
 			// switch back to STDBY Mode
 			if (rfm69STDBYMode()) {
@@ -211,7 +211,7 @@ int main(int argc, char* argv[]) {
 					// check received vs. called remote RF ID
 					for (i = 0, gotyou = 1; i < IDSIZE; i++) // ... and RF ID equal ...
 						if (remrfid[i] != recrfid[i]) gotyou = 0; // ... then done
-					if (!gotyou) delay(85); // wait long enough if wrong RF ID received
+					//if (!gotyou) delay(85); // wait long enough if wrong RF ID received
 				}
 			}
 			// switch back to STDBY Mode
@@ -219,13 +219,23 @@ int main(int argc, char* argv[]) {
 				fprintf(stderr, "Failed to enter STDBY Mode\n");
 				exit(EXIT_FAILURE);
 			}
-		}
-	} while(!gotyou);
 
-	// output of remote RF ID
-	fprintf(stdout, "ACK received from called Station RF ID ");
-	printrfid(recrfid);
-	fprintf(stdout,"\n");
+			// if not receive ACK
+			if (gotyou == 0) {
+				++it;
+			}
+			else {
+				it = Targetlist.erase(it);
+				// output of remote RF ID
+				fprintf(stdout, "ACK received from called Station RF ID ");
+				printrfid(recrfid);
+				fprintf(stdout,"\n");
+				// recover `gotyou` switch
+				gotyou = 0;
+			}
+		}
+	} while(!Targetlist.empty());
+
 
 	close(fd);
 
