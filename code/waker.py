@@ -49,9 +49,16 @@ cursor = db.cursor()
 cursor.execute(sql)
 data = cursor.fetchall()
 data = list(data)
+LogDIR = "/home/pi/Desktop/log/"
 
+for receiver in data:
+    flog = open(LogDIR + receiver['rfID'] + ".log", "a")
+    flog.write("-------------------------------------------------------------------------------------------------\n")
+    flog.close()
 while data:
-    print(json.dumps(data, indent=4))
+    #print(json.dumps(data, indent=4))
+    print( [i['locationENG'] for i in data])
+
     for receiver in data:
         
         if distance(readGPS(), receiver) <= 1000:
@@ -69,7 +76,7 @@ while data:
                     break
                 if expect in line.decode().strip():  
                     rfID = line.decode().strip().split(" ")[-1]
-                    print("ACK received from %s." %(rfID))
+                    print("ACK received from %s" %(rfID))
                     data = [i for i in data if i['rfID'] != rfID]
                     
                 #print(line.decode().strip())

@@ -1,4 +1,5 @@
 /* rfwake
+ * g++ rfwake.cpp rfm63bios.o -o rfwake -lwiringPi
 Copyright (C) 2020  Ray, Chang
 
 This program is free software; you can redistribute it and/or
@@ -12,9 +13,17 @@ of the License, or (at your option) any later version.
 #include <unistd.h>
 #include <string.h>
 
+#include <iostream>
+#include <fstream>
+// TIME HEADER
+#include <chrono>
+#include <ctime>
+
 #ifndef RFM69BIOS_H
 #include "rfm69bios.h"
 #endif
+
+#define LogDIR "/home/pi/Desktop/log/"
 
 void readConfig(char const *fileName, char clist[2][30])
 {
@@ -45,6 +54,22 @@ void readConfig(char const *fileName, char clist[2][30])
     // terminate with the null character
     item[n] = '\0';
     strcpy(clist[1], item); 
+}
+
+char* toTime(std::chrono::system_clock::time_point target) {
+	time_t temp = std::chrono::system_clock::to_time_t(target);
+	char* result = ctime(&temp);
+	return result;
+}
+
+std::string read_gps() {
+	std::fstream fgps;
+	std::string dir = LogDIR, lat, lng, result;
+	fgps.open(dir + "gps.log", std::fstream::in);
+	fgps >> lat >> lng;
+	result = lat + " " + lng;
+	fgps.close();
+	return result;
 }
 
 int main(int argc, char* argv[]) {
@@ -148,6 +173,25 @@ int main(int argc, char* argv[]) {
             for (i = 0, gotyou = 1; i < IDSIZE; i++) {// ... received RF ID ... 
 		if (remrfid[i] != recrfid[i]) gotyou = 0; // RF ID equal... then done			
 	    }
+	    
+	    // write into log file
+	    auto now = std::chrono::system_clock::now();
+	    std::fstream flog;
+	    char str[30]={0};
+	    //memset(str, 0, sizeof str);
+	    for (i = 0; i < IDSIZE; i++) {
+		char temp[3];
+	    	sprintf(temp, "%02x", recrfid[i]);
+		strcat(str, temp);
+		if (i != IDSIZE-1) 
+		    strcat(str, ":");
+	    }
+	    std::string logfname(str);
+	    //std::cout << logfname;
+            flog.open (LogDIR + logfname + ".log", std::fstream::in | std::fstream::out | std::fstream::app);
+	    flog << "ACK received at:\t\t\t" << read_gps() << "\t" << toTime(now);
+	    flog.close();
+
             if (!gotyou) delay(1); // wait long enough if wrong RF ID received
          }
       }
