@@ -148,6 +148,10 @@ int main(int argc, char* argv[]) {
          fprintf(stderr, "Failed to enter STDBY Mode\n");
          exit(EXIT_FAILURE);
       }
+      if (nbr >= 100) {
+	 fprintf(stderr, "Timeout\n");
+	 exit(EXIT_FAILURE);
+      }
    } while(!gotyou);
 
    // output of remote RF ID
