@@ -16,12 +16,22 @@ i=rfm69bios
 echo [... building $i]
 g++ -c $i.c -lWiringPi
 
-for i in rfrespond rfwait rfwake rfwakes; do
+# compile c code
+for i in rfrespond rfwait; do
     echo [... installing $i];
     g++ $i.c rfm69bios.o -o $i -lwiringPi;
     chown root:root $i;
     chmod 0755 $i;
-    cp $i /usr/local/bin/;
+    mv $i /usr/local/bin/;
+done
+
+# compile cpp code
+for i in rfwake rfwakes; do
+    echo [... installing $i];
+    g++ $i.cpp rfm69bios.o -o $i -lwiringPi;
+    chown root:root $i;
+    chmod 0755 $i;
+    mv $i /usr/local/bin/;
 done
 
 popd
