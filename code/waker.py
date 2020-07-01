@@ -3,9 +3,11 @@ import pynmea2
 import subprocess
 import os
 import json
+import time
 import MySQLdb
 import MySQLdb.cursors
 from math import sin, cos, sqrt, atan2, radians
+
 
 def distance(loc1, loc2):
     R = 6373.0
@@ -41,6 +43,13 @@ def readGPS():
     lng = loc[1]
     payload = {'lat': lat, 'lng': lng}
     return payload
+
+def writelog(rfID, str):
+    LogDIR = "/home/pi/Desktop/log/"
+    flog = open(LogDIR + rfID + ".log", "a")
+    flog.write(str)
+    flog.write("\n")
+    flog.close()
     
 db  = MySQLdb.connect("140.113.216.91", "cloud", "cloud2016", "ray", cursorclass=MySQLdb.cursors.DictCursor)
 #db  = MySQLdb.connect("140.113.216.91", "cloud", "cloud2016", "ray")
@@ -49,19 +58,22 @@ cursor = db.cursor()
 cursor.execute(sql)
 data = cursor.fetchall()
 data = list(data)
-LogDIR = "/home/pi/Desktop/log/"
+
+dict_time = {}
 
 for receiver in data:
-    flog = open(LogDIR + receiver['rfID'] + ".log", "a")
-    flog.write("-------------------------------------------------------------------------------------------------\n")
-    flog.close()
+    writelog(receiver['rfID'], "----------------------------------------------------------------------------------------------------------")
+
 while data:
     #print(json.dumps(data, indent=4))
     print( [i['locationENG'] for i in data])
 
     for receiver in data:
-        
-        if distance(readGPS(), receiver) <= 1000:
+        dist = distance(readGPS(), receiver) 
+        if dist <= 400:
+            # first time wakeup and set timestamp in dictionary
+            if dict_time.get(receiver['rfID']) == None:
+                dict_time[receiver['rfID']] = time.time()
             #print("Wakeup %s" % receiver['rfID'])
             cmd = "/usr/local/bin/rfwake " + receiver['rfID']
             print(cmd)
@@ -76,8 +88,19 @@ while data:
                     break
                 if expect in line.decode().strip():  
                     rfID = line.decode().strip().split(" ")[-1]
+                    startTime = time.time()
+                    if dict_time[rfID] != None:
+                        startTime = dict_time[rfID]
+                    endTime = time.time()
+                    escape  = endTime - startTime
+                    writelog(rfID, "escape: " + str(escape) + " sec")
+                    
                     print("ACK received from %s" %(rfID))
+
+                    # remove rfID which received ACK
                     data = [i for i in data if i['rfID'] != rfID]
                     
                 #print(line.decode().strip())
+        else:
+            print("%fm out of range" % dist)
 
