@@ -1,0 +1,1158 @@
+%!PS-Adobe-2.0
+%%Title: PADS Postscript Driver Header
+%%Creator: Andy Montalvo, 18 Lupine St., Lowell, MA  01851
+%%CreationDate: 06/08/90
+%%For: CAD Software, Littleton, MA
+%%EndComments
+%%BeginProcSet: Markers 1.0 0
+% marker attributes
+/MAttr_Width 1 def
+/MAttr_Size  0 def
+/MAttr_Type /M1 def
+% procedures
+/M1 { %def
+% draw marker 1: plus
+% Stack: - M1 -
+-2 0 rmoveto
+4 0 rlineto
+-2 2 rmoveto
+0 -4 rlineto
+} bind def
+/M2 { %def
+% draw marker 2: cross
+% Stack: - M2 -
+-2 -2 rmoveto
+4 4 rlineto
+-4 0 rmoveto
+4 -4 rlineto
+} bind def
+/M3 { %def
+% draw marker 3: square
+% Stack: - M3 -
+0 2 rlineto
+2 0 rlineto
+0 -4 rlineto
+-4 0 rlineto
+0 4 rlineto
+2 0 rlineto
+} bind def
+/M4 { %def
+% draw marker 4: diamond
+% Stack: - M4 -
+0 2 rlineto
+2 -2 rlineto
+-2 -2 rlineto
+-2 2 rlineto
+2 2 rlineto
+} bind def
+/M5 { %def
+% draw marker 5: hourglass
+% Stack: - M5 -
+2 2 rlineto
+-4 0 rlineto
+4 -4 rlineto
+-4 0 rlineto
+2 2 rlineto
+} bind def
+/M6 { %def
+% draw marker 6: bowtie
+% Stack: - M6 -
+2 2 rlineto
+0 -4 rlineto
+-4 4 rlineto
+0 -4 rlineto
+2 2 rlineto
+} bind def
+/M7 { %def
+% draw marker 7: plus (goes with char marker)
+% Stack: - M7 -
+-2 0 rmoveto
+4 0 rlineto
+-2 2 rmoveto
+0 -4 rlineto
+} bind def
+/Marker { %def
+% Command from driver: draw marker
+% STACK: x y Marker -
+MAttr_Size 0 gt
+{
+gsave
+moveto
+MAttr_Size 4 div dup scale
+MAttr_Type load exec
+4 MAttr_Size div dup scale
+MAttr_Width setlinewidth
+stroke
+grestore
+} if
+} def
+%%EndProcSet: Markers 1.0 0
+%%BeginProcSet: Lib 1.0 0
+/sg { %def
+% Command from driver: set the gray scale 0 - 100
+% STACK: greylevel sg
+100 div dup setgray /glev exch def
+} bind def
+/Circle { %def
+% draw a circle
+% STACK: x y radius Circle -
+0 360 arc
+} bind def
+/RndAper { %def
+% select a round aperture
+% STACK: - RndAper -
+1 setlinejoin
+1 setlinecap
+} bind def
+/SqrAper { %def
+% select a square aperture
+% STACK: - SqrAper -
+0 setlinejoin
+2 setlinecap
+} bind def
+/Line { %def
+% draw a set of connected lines
+% STACK: x1 y1 [ x2 y2 ... xn yn ] Line -
+3 1 roll
+moveto
+true
+exch
+% This pushes the x then the y then does lineto
+{ exch  { false } { lineto true } ifelse } forall
+pop
+} bind def
+/Clipto { %def
+% set clipping rectangle from 0,0 to new values
+% STACK: x y Clipto -
+0 0 moveto
+dup 0 exch lineto
+2 copy lineto
+pop
+0 lineto
+closepath
+clip
+newpath
+} bind def
+/Clip4 { %def
+% set clipping rectangle from xmin,ymin to xmax,ymax
+% STACK: xmin ymin xmax ymax Clip4 -
+4 copy pop pop moveto
+4 copy pop exch lineto pop
+2 copy lineto
+exch pop exch pop lineto
+closepath
+clip
+newpath
+} bind def
+%%EndProcSet: Lib 1.0 0
+%%BeginProcSet: Lines 1.0 0
+% line attributes %
+/LAttr_Width 1 def
+% line procedures
+/PLine { %def
+% Cammand from driver: draw a set of connected lines
+% STACK: x1 y1 [ x2 y2 ... xn yn ] PLine -
+Line
+LAttr_Width setlinewidth
+stroke
+} bind def % PLine
+/Char { %def
+% Command from driver: draw a character at the current position
+% STACK: type x y stroke_array Char -
+%    stroke array -- [ stroke1 stroke2 ... stroken ]
+%    stroke -- connected staight lines
+%    type = 0 if text  1 if marker
+gsave
+4 1 roll
+translate
+0 eq { TAttr_Width } { MAttr_Width } ifelse setlinewidth
+{
+dup length 2 gt
+{
+dup dup 0 get exch 1 get % get starting point
+3 -1 roll                % put x y before array
+dup length 2 sub 2 exch getinterval % delete first items from array
+Line
+stroke
+}
+{
+aload pop currentlinewidth 2 div Circle fill
+} ifelse
+} forall
+grestore
+} bind def % Char
+/PArc { %def
+% Command from driver: draw an arc
+% STACK: x y radius startangle deltaangle Arc -
+	 10 div exch 10 div exch
+2 copy pop add
+arc
+LAttr_Width setlinewidth
+stroke
+} bind def
+/PCircle { %def
+% Command from driver: draw an circle
+% STACK: x y radius PCircle -
+Circle
+LAttr_Width setlinewidth
+stroke
+} bind def
+%%EndProcSet: Lines 1.0 0
+%%BeginProcSet: Polygon 1.0 0
+% polygon attributes %
+/PAttr_ExtWidth 1 def
+/PAttr_IntWidth 1 def
+/PAttr_Grid 1 def
+% polygon procedures
+/LoopSet { %def
+% set up for loop condition
+% STACK: start end LoopSet low gridwidth high
+2 copy lt { exch } if
+% make grid line up to absolute coordinates
+PAttr_Grid div truncate PAttr_Grid mul exch
+PAttr_Grid exch
+} bind def
+/Hatch { %def
+% draw cross hatch pattern in current path
+% STACK: - Hatch -
+pathbbox
+/ury exch def
+/urx exch def
+/lly exch def
+/llx exch def
+clip
+newpath
+llx urx LoopSet
+{ % x loop
+dup lly exch ury moveto lineto
+} for
+lly ury LoopSet
+{ % y loop
+llx exch dup urx exch moveto lineto
+} for
+PAttr_IntWidth setlinewidth
+stroke
+} bind def
+/PPoly { %def
+% Command from driver: draw a polygon
+% STACK: x1 y1 [ x2 y2 ... xn yn ] PLine -
+Line
+closepath
+gsave
+PAttr_IntWidth PAttr_Grid ge {fill} {Hatch} ifelse
+grestore
+PAttr_ExtWidth setlinewidth
+stroke
+} bind def
+/DPoly { %def
+% Command from driver: draw a polygon defined by current path
+% STACK: - DPoly -
+closepath
+gsave
+PAttr_IntWidth PAttr_Grid ge {fill} {Hatch} ifelse
+grestore
+PAttr_ExtWidth setlinewidth
+stroke
+} bind def
+%%EndProcSet: Polygon 1.0 0
+%%BeginProcSet: Text 1.0 0
+% text attributes %
+/TAttr_Mirr 0 def
+/TAttr_Orient 0 def
+/TAttr_Width 1 def
+% text procedures
+/Text { %def
+% Command from driver: Draw text
+% STACK: x y width string Text -
+gsave
+4 2 roll
+translate
+TAttr_Mirr 0 gt
+{
+-1 1 scale
+} if
+TAttr_Orient rotate
+0 0 moveto
+dup length dup 1 gt
+{
+exch dup stringwidth pop
+4 -1 roll
+exch 2 copy
+lt
+{
+div 1 scale show
+pop
+}
+{
+sub
+3 -1 roll 1 sub div
+0 3 -1 roll ashow
+}
+ifelse
+}
+{
+pop
+show
+pop
+} ifelse
+grestore
+} bind def
+%%EndProcSet: Text 1.0 0
+%%BeginProcSet: FlashSymbols 1.0 0
+% flash symbol attributes %
+/FAttr_Type /PRndPad def
+/FAttr_Width  0 def
+/FAttr_Length 1 def
+/FAttr_Orient 0 def
+% flash symbol procedures
+/PRndPad { %def
+% Command from driver: draw an circular pad
+% STACK: - PCirclePad -
+FAttr_Width dup scale
+0 0 .5 Circle
+fill
+} bind def
+/PSqrPad { %def
+% Draw an Square pad
+% STACK: - PRectPad -
+FAttr_Width dup scale
+.5 .5 moveto
+-.5 .5 lineto
+-.5 -.5 lineto
+.5 -.5 lineto
+closepath
+fill
+} bind def
+/PRectPad { %def
+% Draw an rectangular pad
+% STACK: - PRectPad -
+FAttr_Length FAttr_Width scale
+.5 .5 moveto
+-.5 .5 lineto
+-.5 -.5 lineto
+.5 -.5 lineto
+closepath
+fill
+} bind def
+/POvalPad { %def
+% Draw an oval pad
+% STACK: - POvalPad -
+FAttr_Width setlinewidth
+FAttr_Length FAttr_Width sub 2 div dup
+neg 0 moveto
+0 lineto
+RndAper
+stroke
+} bind def
+/Anl { %def
+0 0 .5 Circle
+fill
+FAttr_Length FAttr_Width lt
+{ % inner circle
+0 0
+FAttr_Length 0 gt { FAttr_Length FAttr_Width div } { .5 } ifelse
+2 div Circle
+1 setgray
+fill
+glev setgray
+} if
+} bind def
+/PAnlPad { %def
+% Draw an annular pad
+% STACK: - PAnlPad -
+FAttr_Width dup scale
+Anl
+} bind def
+/PRelPad { %def
+% Draw an thermal relief pad
+% STACK: - PRelPad -
+PAnlPad
+1 setgray
+.17 setlinewidth
+0 setlinecap   % the x
+45 rotate
+.5 0 moveto -.5 0 lineto
+0 .5 moveto  0 -.5 lineto
+stroke
+glev setgray
+} bind def
+/Flash { %def
+% Command from driver: Flash a symbol
+% STACK: x y Flash -
+FAttr_Width 0 gt
+{
+gsave
+translate
+FAttr_Orient rotate
+FAttr_Type load exec
+grestore
+} if
+} def
+%%EndProcSet: FlashSymbols 1.0 0
+%%BeginProcSet: SetAttr 1.0 0
+/SetLine { %def
+% Set the width of the lines
+% STACK: linewidth SetLine -
+/LAttr_Width exch def
+RndAper
+} bind def
+/SetPoly { %def
+% Set attribute of polygon
+% STACK: external_width internal_grid_width grid_spacing SetPoly -
+/PAttr_Grid exch def
+/PAttr_IntWidth exch def
+/PAttr_ExtWidth exch def
+RndAper
+} bind def
+/SetFlash { %def
+% Set Attributed of flash pad
+% STACK: orientation_angle length width aperture_type SetFlash -
+/FAttr_Type exch def
+/FAttr_Width exch def
+/FAttr_Length exch def
+/FAttr_Orient exch 10 div def
+} bind def
+/SetMkr { %def
+% Set attributes of markers
+% STACK: linewidth size type SetMkr -
+/MAttr_Type exch def
+/MAttr_Size exch def
+/MAttr_Width exch def
+RndAper
+} bind def
+/SetText1 { %def
+% Set attributes of text
+% STACK: fontname height orient mirror SetMkr -
+/TAttr_Mirr exch def
+/TAttr_Orient exch 10 div def
+exch findfont exch scalefont setfont
+RndAper
+} bind def
+/SetText2 { %def
+% Set attributes of text
+% STACK: linewidth height mirror orient SetMkr -
+/TAttr_Width exch def
+RndAper
+} bind def
+%%EndProcSet: SetAttr 1.0 0
+%%BeginProcSet: Initialize 1.0 0
+/Init { %def
+% Initialize the driver
+% STACK: Init -
+72 1000 div dup scale % Scale to 1/1000 inch
+250 250 translate     % make origin 1/4 inch from bottom left
+1.5 setmiterlimit 1 RndAper                     % set line defaults
+0 setgray                                       % set color default
+/glev 0 def
+} def
+/VMSave { %def
+% Save the current state of VM
+% STACK: VMSave -
+/VMState save def
+} def
+/VMRest { %def
+% Restore the saved state of VM
+% STACK: VMRest -
+VMState restore
+} def
+/VMFlush { %def
+% Flush accumulated junk in VM
+% STACK: VMFlush -
+VMRest
+VMSave
+} def
+%%EndProcSet: Initialize 1.0 0
+%%EndProlog
+/Helvetica findfont 12 scalefont setfont
+35 760 moveto
+(RAY2.job - Sun May 17 17:20:36 2020) show
+gsave
+Init
+8000 10500 Clipto
+1050 7950 translate
+0 rotate
+1 1 div dup scale
+75 sg
+VMSave
+VMRest
+50 sg
+VMSave
+35 SetLine
+2750 -1300 [ 2750 -1200 ] PLine
+2750 -1200 [ 2800 -1150 ] PLine
+2800 -1100 [ 2800 -1150 ] PLine
+2825 -850 [ 2825 -1100 ] PLine
+2825 -1100 [ 2800 -1100 ] PLine
+3000 -2200 [ 3300 -2200 ] PLine
+3200 -4100 [ 3225 -4100 ] PLine
+3225 -4100 [ 3250 -4125 ] PLine
+3250 -4125 [ 5400 -4125 ] PLine
+5400 -4125 [ 5425 -4100 ] PLine
+5425 -4100 [ 5450 -4100 ] PLine
+2900 -1300 [ 2900 -1450 ] PLine
+2900 -1450 [ 2975 -1525 ] PLine
+2975 -1525 [ 3300 -1525 ] PLine
+3300 -1525 [ 3525 -1300 ] PLine
+3525 -1300 [ 3600 -1300 ] PLine
+20 SetLine
+3200 -4300 [ 3175 -4300 ] PLine
+3175 -4300 [ 3150 -4275 ] PLine
+3150 -4275 [ 2825 -4275 ] PLine
+2825 -4275 [ 2812 -4262 ] PLine
+2350 -2650 [ 2300 -2700 ] PLine
+3600 -2200 [ 4100 -2200 ] PLine
+2350 -2750 [ 2300 -2800 ] PLine
+3525 -2100 [ 4100 -2100 ] PLine
+3200 -2925 [ 3075 -2800 ] PLine
+3075 -2800 [ 2400 -2800 ] PLine
+3200 -2925 [ 3225 -2923 ] PLine
+3225 -2923 [ 3525 -2923 ] PLine
+3525 -2923 [ 3700 -2748 ] PLine
+3700 -2748 [ 3700 -2650 ] PLine
+3700 -2650 [ 3750 -2600 ] PLine
+3750 -2600 [ 4100 -2600 ] PLine
+2350 -2850 [ 2300 -2900 ] PLine
+2925 -2475 [ 3525 -2475 ] PLine
+3525 -2475 [ 3700 -2300 ] PLine
+3700 -2300 [ 4100 -2300 ] PLine
+2400 -2900 [ 2700 -2900 ] PLine
+2700 -2550 [ 3675 -2550 ] PLine
+3675 -2550 [ 3825 -2400 ] PLine
+3825 -2400 [ 4100 -2400 ] PLine
+12 SetLine
+2350 -2650 [ 3600 -2650 ] PLine
+2350 -2750 [ 3525 -2750 ] PLine
+2350 -2850 [ 2925 -2850 ] PLine
+30 SetLine
+4000 -1200 [ 4000 -1500 ] PLine
+40 SetLine
+2800 -3900 [ 3200 -3900 ] PLine
+3000 -2400 [ 3050 -2350 ] PLine
+3050 -2350 [ 3300 -2350 ] PLine
+2300 -3700 [ 2300 -3775 ] PLine
+2300 -3775 [ 2675 -3775 ] PLine
+2675 -3775 [ 2800 -3900 ] PLine
+2400 -2400 [ 3000 -2400 ] PLine
+2700 -2400 [ 2700 -2200 ] PLine
+25 SetLine
+2975 -850 [ 2975 -1100 ] PLine
+2975 -1100 [ 3075 -1200 ] PLine
+3075 -1200 [ 3200 -1200 ] PLine
+VMRest
+25 sg
+VMSave
+VMRest
+0 sg
+VMSave
+10 SetLine
+-100 -4900 [ 6000 -4900 ] PLine
+6000 -4900 [ 6000 -500 ] PLine
+6000 -500 [ -100 -500 ] PLine
+-100 -500 [ -100 -4900 ] PLine
+10 SetLine
+2000 -950 111 PCircle
+10 SetLine
+2050 -750 [ 2050 -825 ] PLine
+10 SetLine
+2100 -800 [ 2000 -800 ] PLine
+30 SetLine
+2100 -1050 [ 1900 -1050 ] PLine
+10 SetLine
+1475 -800 [ 1475 -900 ] PLine
+10 SetLine
+1525 -850 [ 1425 -850 ] PLine
+10 SetLine
+1400 -1075 175 PCircle
+50 SetLine
+1525 -1225 [ 1275 -1225 ] PLine
+10 SetLine
+4475 -1000 [ 4475 -1100 ] PLine
+10 SetLine
+4525 -1050 [ 4425 -1050 ] PLine
+10 SetLine
+4400 -1275 175 PCircle
+50 SetLine
+4525 -1425 [ 4275 -1425 ] PLine
+10 SetLine
+4700 -1200 [ 4700 -1275 ] PLine
+10 SetLine
+4700 -1325 [ 4700 -1400 ] PLine
+10 SetLine
+4750 -1275 [ 4650 -1275 ] PLine
+10 SetLine
+4750 -1325 [ 4650 -1325 ] PLine
+10 SetLine
+3800 -2900 [ 3800 -2825 ] PLine
+10 SetLine
+3800 -2775 [ 3800 -2700 ] PLine
+10 SetLine
+3750 -2825 [ 3850 -2825 ] PLine
+10 SetLine
+3750 -2775 [ 3850 -2775 ] PLine
+10 SetLine
+4200 -1575 [ 4100 -1575 ] PLine
+10 SetLine
+4150 -1625 [ 4150 -1525 ] PLine
+10 SetLine
+3925 -1500 175 PCircle
+50 SetLine
+3775 -1625 [ 3775 -1375 ] PLine
+10 SetLine
+3000 -2200 [ 3000 -2275 ] PLine
+10 SetLine
+3000 -2325 [ 3000 -2400 ] PLine
+10 SetLine
+3050 -2275 [ 2950 -2275 ] PLine
+10 SetLine
+3050 -2325 [ 2950 -2325 ] PLine
+10 SetLine
+3375 -2000 [ 3375 -2100 ] PLine
+10 SetLine
+3425 -2050 [ 3325 -2050 ] PLine
+10 SetLine
+3300 -2275 175 PCircle
+50 SetLine
+3425 -2425 [ 3175 -2425 ] PLine
+10 SetLine
+3100 -1375 [ 3000 -1375 ] PLine
+10 SetLine
+3050 -1425 [ 3050 -1325 ] PLine
+10 SetLine
+2825 -1300 175 PCircle
+50 SetLine
+2675 -1425 [ 2675 -1175 ] PLine
+10 SetLine
+3300 -1800 206 PCircle
+10 SetLine
+3000 -1800 [ 3050 -1800 ] PLine
+10 SetLine
+3025 -1775 [ 3025 -1825 ] PLine
+40 SetLine
+3500 -1650 [ 3500 -1950 ] PLine
+10 SetLine
+2960 -1044 [ 2960 -1156 ] PLine
+10 SetLine
+2950 -1044 [ 2950 -1154 ] PLine
+10 SetLine
+2900 -1160 [ 2900 -1038 ] PLine
+2900 -1038 [ 3200 -1038 ] PLine
+3200 -1038 [ 3200 -1160 ] PLine
+3200 -1160 [ 2900 -1160 ] PLine
+10 SetLine
+2900 -1100 [ 2850 -1100 ] PLine
+10 SetLine
+3200 -1100 [ 3250 -1100 ] PLine
+10 SetLine
+300 -1500 [ 2500 -1500 ] PLine
+VMFlush
+10 SetLine
+0 0 45 /PRndPad SetFlash
+10 SetText2
+2500 -1500 [ 2500 -4800 ] PLine
+2500 -4800 [ 300 -4800 ] PLine
+300 -4800 [ 300 -1500 ] PLine
+10 SetLine
+2805 -3998 151 2375 2450 PArc
+10 SetLine
+2725 -3877 [ 2725 -4122 ] PLine
+10 SetLine
+3500 -1370 [ 3500 -1430 ] PLine
+3500 -1430 [ 3300 -1430 ] PLine
+3300 -1430 [ 3300 -1370 ] PLine
+3300 -1370 [ 3500 -1370 ] PLine
+10 SetLine
+3500 -1400 [ 3560 -1400 ] PLine
+10 SetLine
+3300 -1400 [ 3250 -1400 ] PLine
+10 SetLine
+3300 -1330 [ 3300 -1270 ] PLine
+3300 -1270 [ 3500 -1270 ] PLine
+3500 -1270 [ 3500 -1330 ] PLine
+3500 -1330 [ 3300 -1330 ] PLine
+10 SetLine
+3300 -1300 [ 3240 -1300 ] PLine
+10 SetLine
+3500 -1300 [ 3550 -1300 ] PLine
+10 SetLine
+3300 -1230 [ 3300 -1170 ] PLine
+3300 -1170 [ 3500 -1170 ] PLine
+3500 -1170 [ 3500 -1230 ] PLine
+3500 -1230 [ 3300 -1230 ] PLine
+10 SetLine
+3300 -1200 [ 3240 -1200 ] PLine
+10 SetLine
+3500 -1200 [ 3550 -1200 ] PLine
+10 SetLine
+1500 -700 [ 1450 -700 ] PLine
+10 SetLine
+1900 -625 [ 1900 -775 ] PLine
+1900 -775 [ 1500 -775 ] PLine
+1500 -775 [ 1500 -625 ] PLine
+1500 -625 [ 1900 -625 ] PLine
+10 SetLine
+1900 -700 [ 1950 -700 ] PLine
+10 SetLine
+2900 -3055 [ 2900 -2995 ] PLine
+2900 -2995 [ 3100 -2995 ] PLine
+3100 -2995 [ 3100 -3055 ] PLine
+3100 -3055 [ 2900 -3055 ] PLine
+10 SetLine
+2900 -3025 [ 2840 -3025 ] PLine
+10 SetLine
+3100 -3025 [ 3150 -3025 ] PLine
+10 SetLine
+2900 -2955 [ 2900 -2895 ] PLine
+2900 -2895 [ 3100 -2895 ] PLine
+3100 -2895 [ 3100 -2955 ] PLine
+3100 -2955 [ 2900 -2955 ] PLine
+10 SetLine
+2900 -2925 [ 2840 -2925 ] PLine
+10 SetLine
+3100 -2925 [ 3150 -2925 ] PLine
+10 SetLine
+4025 -2025 [ 5175 -2025 ] PLine
+5175 -2025 [ 5175 -2875 ] PLine
+5175 -2875 [ 4025 -2875 ] PLine
+4025 -2875 [ 4025 -2025 ] PLine
+10 SetLine
+3050 -3150 [ 5600 -3150 ] PLine
+5600 -3150 [ 5600 -4750 ] PLine
+5600 -4750 [ 3050 -4750 ] PLine
+3050 -4750 [ 3050 -3150 ] PLine
+10 SetLine
+2850 -1650 [ 2850 -1950 ] PLine
+2850 -1950 [ 2750 -1950 ] PLine
+2750 -1950 [ 2750 -1650 ] PLine
+2750 -1650 [ 2850 -1650 ] PLine
+10 SetLine
+2850 -1750 [ 2750 -1750 ] PLine
+10 SetLine
+2650 -900 [ 3150 -900 ] PLine
+3150 -900 [ 3150 -750 ] PLine
+3150 -750 [ 2650 -750 ] PLine
+2650 -750 [ 2650 -900 ] PLine
+10 SetLine
+1050 -1200 [ 1050 -800 ] PLine
+1050 -800 [ 500 -800 ] PLine
+500 -800 [ 500 -1200 ] PLine
+500 -1200 [ 1050 -1200 ] PLine
+10 SetLine
+3850 -1150 [ 4150 -1150 ] PLine
+4150 -1150 [ 4150 -1250 ] PLine
+4150 -1250 [ 3850 -1250 ] PLine
+3850 -1250 [ 3850 -1150 ] PLine
+10 SetLine
+3950 -1150 [ 3950 -1250 ] PLine
+10 SetLine
+2700 -2150 111 PCircle
+10 SetLine
+2750 -1950 [ 2750 -2025 ] PLine
+10 SetLine
+VMFlush
+10 SetLine
+0 0 45 /PRndPad SetFlash
+10 SetText2
+2800 -2000 [ 2700 -2000 ] PLine
+30 SetLine
+2800 -2250 [ 2600 -2250 ] PLine
+15 SetLine
+5800 -700 50 PCircle
+15 SetLine
+5800 -4700 50 PCircle
+15 SetLine
+100 -4700 50 PCircle
+15 SetLine
+100 -700 50 PCircle
+10 SetText2
+0 2150 -875 [ [ 34 50 31 56 27 62 22 65 13 65 9 62 4 56 2 50 0 40 0 25 2 15 4 9 9 3 13 0 22 0 27 3 31 9 34 15 ] ] Char
+0 2204 -875 [ [ 2 50 2 53 4 59 6 62 11 65 20 65 25 62 27 59 29 53 29 46 27 40 22 31 0 0 31 0 ] ] Char
+10 SetText2
+0 1625 -1100 [ [ 34 50 31 56 27 62 22 65 13 65 9 62 4 56 2 50 0 40 0 25 2 15 4 9 9 3 13 0 22 0 27 3 31 9 34 15 ] ] Char
+0 1679 -1100 [ [ 4 65 29 65 15 40 22 40 27 37 29 34 31 25 31 18 29 9 25 3 18 0 11 0 4 3 2 6 0 12 ] ] Char
+10 SetText2
+0 4500 -1025 [ [ 34 50 31 56 27 62 22 65 13 65 9 62 4 56 2 50 0 40 0 25 2 15 4 9 9 3 13 0 22 0 27 3 31 9 34 15 ] ] Char
+0 4554 -1025 [ [ 22 65 0 21 34 21 ] [ 22 65 22 0 ] ] Char
+10 SetText2
+0 4700 -1050 [ [ 34 50 31 56 27 62 22 65 13 65 9 62 4 56 2 50 0 40 0 25 2 15 4 9 9 3 13 0 22 0 27 3 31 9 34 15 ] ] Char
+0 4754 -1050 [ [ 29 65 6 65 4 37 6 40 13 43 20 43 27 40 31 34 34 25 31 18 29 9 25 3 18 0 11 0 4 3 2 6 0 12 ] ] Char
+10 SetText2
+0 3735 -2875 [ [ -50 34 -56 31 -62 27 -65 22 -65 13 -62 9 -56 4 -50 2 -40 0 -25 0 -15 2 -9 4 -3 9 0 13 0 22 -3 27 -9 31 -15 34 ] ] Char
+0 3735 -2820 [ [ -56 27 -62 25 -65 18 -65 13 -62 6 -53 2 -37 0 -21 0 -9 2 -3 6 0 13 0 15 -3 22 -9 27 -18 29 -21 29 -31 27 -37 22 -40 15 -40 13 -37 6 -31 2 -21 0 ] ] Char
+10 SetText2
+0 4000 -1750 [ [ 34 50 31 56 27 62 22 65 13 65 9 62 4 56 2 50 0 40 0 25 2 15 4 9 9 3 13 0 22 0 27 3 31 9 34 15 ] ] Char
+0 4054 -1750 [ [ 31 65 9 0 ] [ 0 65 31 65 ] ] Char
+10 SetText2
+0 3025 -2125 [ [ 34 50 31 56 27 62 22 65 13 65 9 62 4 56 2 50 0 40 0 25 2 15 4 9 9 3 13 0 22 0 27 3 31 9 34 15 ] ] Char
+0 3079 -2125 [ [ 11 65 4 62 2 56 2 50 4 43 9 40 18 37 25 34 29 28 31 21 31 12 29 6 27 3 20 0 11 0 4 3 2 6 0 12 0 21 2 28 6 34 13 37 22 40 27 43 29 50 29 56 27 62 20 65 11 65 ] ] Char
+10 SetText2
+0 3475 -2400 [ [ 34 50 31 56 27 62 22 65 13 65 9 62 4 56 2 50 0 40 0 25 2 15 4 9 9 3 13 0 22 0 27 3 31 9 34 15 ] ] Char
+0 3529 -2400 [ [ 0 53 4 56 11 65 11 0 ] ] Char
+0 3561 -2400 [ [ 13 65 6 62 2 53 0 37 0 28 2 12 6 3 13 0 18 0 25 3 29 12 31 28 31 37 29 53 25 62 18 65 13 65 ] ] Char
+10 SetText2
+0 2500 -1225 [ [ 0 65 0 0 27 0 ] ] Char
+0 2547 -1225 [ [ 0 53 4 56 11 65 11 0 ] ] Char
+10 SetText2
+0 3600 -1875 [ [ 34 50 31 56 27 62 22 65 13 65 9 62 4 56 2 50 0 40 0 25 2 15 4 9 9 3 13 0 22 0 27 3 31 9 34 15 ] ] Char
+0 3654 -1875 [ [ 0 53 4 56 11 65 11 0 ] ] Char
+10 SetText2
+0 3000 -1125 [ [ 0 65 0 0 ] [ 0 65 15 65 22 62 27 56 29 50 31 40 31 25 29 15 27 9 22 3 15 0 0 0 ] ] Char
+0 3052 -1125 [ [ 0 53 4 56 11 65 11 0 ] ] Char
+10 SetText2
+0 2100 -1400 [ [ 0 65 0 0 ] [ 0 65 20 65 27 62 29 59 31 53 31 46 29 40 27 37 20 34 0 34 ] [ 15 34 31 0 ] ] Char
+0 2152 -1400 [ [ 13 65 9 62 4 56 2 50 0 40 0 25 2 15 4 9 9 3 13 0 22 0 27 3 31 9 34 15 36 25 36 40 34 50 31 56 27 62 22 65 13 65 ] ] Char
+0 2209 -1400 [ [ 31 56 27 62 20 65 11 65 4 62 0 56 0 50 2 43 4 40 9 37 22 31 27 28 29 25 31 18 31 9 27 3 20 0 11 0 4 3 0 9 ] ] Char
+0 2261 -1400 [ [ 0 65 0 0 ] [ 0 65 29 65 ] [ 0 34 18 34 ] [ 0 0 29 0 ] ] Char
+0 2311 -1400 [ [ 0 65 0 0 ] [ 0 65 20 65 27 62 29 59 31 53 31 46 29 40 27 37 20 34 ] [ 0 34 20 34 27 31 29 28 31 21 31 12 29 6 27 3 20 0 0 0 ] ] Char
+0 2363 -1400 [ [ 0 65 18 34 18 0 ] [ 36 65 18 34 ] ] Char
+10 SetText2
+0 3055 -3935 [ [ 65 -13 62 -9 56 -4 50 -2 40 0 25 0 15 -2 9 -4 3 -9 0 -13 0 -22 3 -27 9 -31 15 -34 25 -36 40 -36 50 -34 56 -31 62 -27 65 -22 65 -13 ] [ 12 -20 -6 -34 ] ] Char
+0 3055 -3991 [ [ 53 0 56 -4 65 -11 0 -11 ] ] Char
+10 SetText2
+0 3650 -1425 [ [ 0 65 0 0 ] [ 0 65 20 65 27 62 29 59 31 53 31 46 29 40 27 37 20 34 0 34 ] [ 15 34 31 0 ] ] Char
+0 3702 -1425 [ [ 0 53 4 56 11 65 11 0 ] ] Char
+10 SetText2
+0 3650 -1325 [ [ 0 65 0 0 ] [ 0 65 20 65 27 62 29 59 31 53 31 46 29 40 27 37 20 34 0 34 ] [ 15 34 31 0 ] ] Char
+0 3702 -1325 [ [ 2 50 2 53 4 59 6 62 11 65 20 65 25 62 27 59 29 53 29 46 27 40 22 31 0 0 31 0 ] ] Char
+10 SetText2
+0 3650 -1225 [ [ 0 65 0 0 ] [ 0 65 20 65 27 62 29 59 31 53 31 46 29 40 27 37 20 34 0 34 ] [ 15 34 31 0 ] ] Char
+0 3702 -1225 [ [ 4 65 29 65 15 40 22 40 27 37 29 34 31 25 31 18 29 9 25 3 18 0 11 0 4 3 2 6 0 12 ] ] Char
+10 SetText2
+0 1325 -600 [ [ 0 65 0 0 ] [ 0 65 20 65 27 62 29 59 31 53 31 46 29 40 27 37 20 34 0 34 ] [ 15 34 31 0 ] ] Char
+0 1377 -600 [ [ 22 65 0 21 34 21 ] [ 22 65 22 0 ] ] Char
+10 SetText2
+0 3250 -3050 [ [ 0 65 0 0 ] [ 0 65 20 65 27 62 29 59 31 53 31 46 29 40 27 37 20 34 0 34 ] [ 15 34 31 0 ] ] Char
+0 3302 -3050 [ [ 29 65 6 65 4 37 6 40 13 43 20 43 27 40 31 34 34 25 31 18 29 9 25 3 18 0 11 0 4 3 2 6 0 12 ] ] Char
+10 SetText2
+0 3250 -2950 [ [ 0 65 0 0 ] [ 0 65 20 65 27 62 29 59 31 53 31 46 29 40 27 37 20 34 0 34 ] [ 15 34 31 0 ] ] Char
+0 3302 -2950 [ [ 27 56 25 62 18 65 13 65 6 62 2 53 0 37 0 21 2 9 6 3 13 0 15 0 22 3 27 9 29 18 29 21 27 31 22 37 15 40 13 40 6 37 2 31 0 21 ] ] Char
+10 SetText2
+0 4300 -1950 [ [ 0 65 0 0 ] [ 0 65 20 65 27 62 29 59 31 53 31 46 29 40 27 37 20 34 0 34 ] [ 15 34 31 0 ] ] Char
+0 4352 -1950 [ [ 0 65 0 0 ] [ 0 65 29 65 ] [ 0 34 18 34 ] ] Char
+0 4402 -1950 [ [ 0 65 0 0 ] [ 0 65 18 0 ] [ 36 65 18 0 ] [ 36 65 36 0 ] ] Char
+0 4459 -1950 [ [ 27 56 25 62 18 65 13 65 6 62 2 53 0 37 0 21 2 9 6 3 13 0 15 0 22 3 27 9 29 18 29 21 27 31 22 37 15 40 13 40 6 37 2 31 0 21 ] ] Char
+0 4509 -1950 [ [ 29 43 27 34 22 28 15 25 13 25 6 28 2 34 0 43 0 46 2 56 6 62 13 65 15 65 22 62 27 56 29 43 29 28 27 12 22 3 15 0 11 0 4 3 2 9 ] ] Char
+10 SetText2
+0 5300 -3075 [ [ 0 65 0 0 ] [ 0 65 20 65 27 62 29 59 31 53 31 46 29 40 27 37 20 34 0 34 ] [ 15 34 31 0 ] ] Char
+0 5352 -3075 [ [ 0 65 0 0 ] [ 0 65 29 65 ] [ 0 34 18 34 ] [ 0 0 29 0 ] ] Char
+0 5402 -3075 [ [ 0 65 0 0 27 0 ] ] Char
+0 5449 -3075 [ [ 18 65 0 0 ] [ 18 65 36 0 ] [ 6 21 29 21 ] ] Char
+0 5506 -3075 [ [ 0 65 18 34 18 0 ] [ 36 65 18 34 ] ] Char
+10 SetText2
+0 2725 -1600 [ [ 22 65 22 15 20 6 18 3 13 0 9 0 4 3 2 6 0 15 0 21 ] ] Char
+0 2768 -1600 [ [ 0 65 0 0 ] [ 0 65 20 65 27 62 29 59 31 53 31 43 29 37 27 34 20 31 0 31 ] ] Char
+0 2820 -1600 [ [ 0 53 4 56 11 65 11 0 ] ] Char
+10 SetText2
+0 2450 -875 [ [ 0 65 18 0 ] [ 36 65 18 0 ] ] Char
+0 2506 -875 [ [ 2 50 2 53 4 59 6 62 11 65 20 65 25 62 27 59 29 53 29 46 27 40 22 31 0 0 31 0 ] ] Char
+0 2559 -875 [ [ 2 50 2 53 4 59 6 62 11 65 20 65 25 62 27 59 29 53 29 46 27 40 22 31 0 0 31 0 ] ] Char
+10 SetText2
+0 750 -750 [ [ 0 65 0 0 ] [ 0 65 20 65 27 62 29 59 31 53 31 43 29 37 27 34 20 31 0 31 ] ] Char
+0 802 -750 [ [ 31 56 27 62 20 65 11 65 4 62 0 56 0 50 2 43 4 40 9 37 22 31 27 28 29 25 31 18 31 9 27 3 20 0 11 0 4 3 0 9 ] ] Char
+0 854 -750 [ [ 0 53 4 56 11 65 11 0 ] ] Char
+10 SetText2
+0 4200 -1100 [ [ 0 65 18 0 ] [ 36 65 18 0 ] ] Char
+0 4256 -1100 [ [ 2 50 2 53 4 59 6 62 11 65 20 65 25 62 27 59 29 53 29 46 27 40 22 31 0 0 31 0 ] ] Char
+10 SetText2
+0 2725 -2375 [ [ 34 50 31 56 27 62 22 65 13 65 9 62 4 56 2 50 0 40 0 25 2 15 4 9 9 3 13 0 22 0 27 3 31 9 34 15 ] ] Char
+0 2779 -2375 [ [ 29 43 27 34 22 28 15 25 13 25 6 28 2 34 0 43 0 46 2 56 6 62 13 65 15 65 22 62 27 56 29 43 29 28 27 12 22 3 15 0 11 0 4 3 2 9 ] ] Char
+10 SetText2
+0 5800 -700 [ [ 0 65 0 0 ] [ 31 65 31 0 ] [ 0 34 31 34 ] ] Char
+0 5852 -700 [ [ 0 53 4 56 11 65 11 0 ] ] Char
+10 SetText2
+0 5800 -4700 [ [ 0 65 0 0 ] [ 31 65 31 0 ] [ 0 34 31 34 ] ] Char
+0 5852 -4700 [ [ 2 50 2 53 4 59 6 62 11 65 20 65 25 62 27 59 29 53 29 46 27 40 22 31 0 0 31 0 ] ] Char
+10 SetText2
+0 100 -4700 [ [ 0 65 0 0 ] [ 31 65 31 0 ] [ 0 34 31 34 ] ] Char
+0 152 -4700 [ [ 4 65 29 65 15 40 22 40 27 37 29 34 31 25 31 18 29 9 25 3 18 0 11 0 4 3 2 6 0 12 ] ] Char
+10 SetText2
+0 100 -700 [ [ 0 65 0 0 ] [ 31 65 31 0 ] [ 0 34 31 34 ] ] Char
+0 152 -700 [ [ 22 65 0 21 34 21 ] [ 22 65 22 0 ] ] Char
+0 0 60 /PRndPad SetFlash
+2000 -900 Flash
+2000 -1000 Flash
+0 0 70 /PRndPad SetFlash
+1400 -1000 Flash
+1400 -1150 Flash
+4400 -1200 Flash
+4400 -1350 Flash
+0 0 60 /PRndPad SetFlash
+4700 -1200 Flash
+4700 -1400 Flash
+3800 -2900 Flash
+3800 -2700 Flash
+0 0 70 /PRndPad SetFlash
+4000 -1500 Flash
+3850 -1500 Flash
+0 0 60 /PRndPad SetFlash
+3000 -2200 Flash
+3000 -2400 Flash
+0 0 70 /PRndPad SetFlash
+3300 -2200 Flash
+3300 -2350 Flash
+2900 -1300 Flash
+2750 -1300 Flash
+3200 -1800 Flash
+3400 -1800 Flash
+0 0 70 /PSqrPad SetFlash
+2800 -1100 Flash
+0 0 70 /PRndPad SetFlash
+VMFlush
+15 SetLine
+0 0 70 /PRndPad SetFlash
+10 SetText2
+3300 -1100 Flash
+0 0 60 /PSqrPad SetFlash
+2300 -1800 Flash
+0 0 60 /PRndPad SetFlash
+2400 -1800 Flash
+2300 -1900 Flash
+2400 -1900 Flash
+2300 -2000 Flash
+2400 -2000 Flash
+2300 -2100 Flash
+2400 -2100 Flash
+2300 -2200 Flash
+2400 -2200 Flash
+2300 -2300 Flash
+2400 -2300 Flash
+2300 -2400 Flash
+2400 -2400 Flash
+2300 -2500 Flash
+2400 -2500 Flash
+2300 -2600 Flash
+2400 -2600 Flash
+2300 -2700 Flash
+2400 -2700 Flash
+2300 -2800 Flash
+2400 -2800 Flash
+2300 -2900 Flash
+2400 -2900 Flash
+2300 -3000 Flash
+2400 -3000 Flash
+2300 -3100 Flash
+2400 -3100 Flash
+2300 -3200 Flash
+2400 -3200 Flash
+2300 -3300 Flash
+2400 -3300 Flash
+2300 -3400 Flash
+2400 -3400 Flash
+2300 -3500 Flash
+2400 -3500 Flash
+2300 -3600 Flash
+2400 -3600 Flash
+2300 -3700 Flash
+2400 -3700 Flash
+0 0 130 /PRndPad SetFlash
+2350 -1600 Flash
+425 -1600 Flash
+425 -3900 Flash
+2350 -3900 Flash
+0 0 60 /PRndPad SetFlash
+2800 -4100 Flash
+2800 -4000 Flash
+2800 -3900 Flash
+3600 -1400 Flash
+3200 -1400 Flash
+3200 -1300 Flash
+3600 -1300 Flash
+3200 -1200 Flash
+3600 -1200 Flash
+2000 -700 Flash
+1400 -700 Flash
+2800 -3025 Flash
+3200 -3025 Flash
+2800 -2925 Flash
+3200 -2925 Flash
+0 0 60 /PSqrPad SetFlash
+4100 -2100 Flash
+0 0 60 /PRndPad SetFlash
+4100 -2200 Flash
+4100 -2300 Flash
+4100 -2400 Flash
+4100 -2500 Flash
+4100 -2600 Flash
+4100 -2700 Flash
+4100 -2800 Flash
+5100 -2500 Flash
+5100 -2400 Flash
+5100 -2300 Flash
+5100 -2200 Flash
+5100 -2100 Flash
+0 0 111 /PRndPad SetFlash
+3200 -3700 Flash
+3200 -3900 Flash
+3200 -4100 Flash
+3200 -4300 Flash
+5450 -4300 Flash
+5450 -4100 Flash
+5450 -3900 Flash
+0 0 130 /PRndPad SetFlash
+5475 -3300 Flash
+5475 -4600 Flash
+3175 -4600 Flash
+3175 -3300 Flash
+0 0 50 /PSqrPad SetFlash
+2800 -1700 Flash
+0 0 50 /PRndPad SetFlash
+2800 -1800 Flash
+2800 -1900 Flash
+0 0 70 /PRndPad SetFlash
+2750 -800 Flash
+2825 -850 Flash
+VMFlush
+15 SetLine
+0 0 70 /PRndPad SetFlash
+10 SetText2
+2900 -800 Flash
+2975 -850 Flash
+3050 -800 Flash
+0 0 170 /PRndPad SetFlash
+1000 -1000 Flash
+875 -1175 Flash
+750 -1000 Flash
+0 0 60 /PSqrPad SetFlash
+3900 -1200 Flash
+0 0 60 /PRndPad SetFlash
+4000 -1200 Flash
+4100 -1200 Flash
+2700 -2100 Flash
+2700 -2200 Flash
+35 SetLine
+2000 -900 [ 2000 -700 ] PLine
+2000 -700 [ 2700 -700 ] PLine
+2700 -700 [ 2750 -750 ] PLine
+2750 -750 [ 2750 -800 ] PLine
+2800 -1900 [ 2700 -2000 ] PLine
+2700 -2000 [ 2700 -2100 ] PLine
+2700 -2100 [ 2625 -2100 ] PLine
+2625 -2100 [ 2575 -2150 ] PLine
+2575 -2150 [ 2575 -4275 ] PLine
+2575 -4275 [ 2700 -4400 ] PLine
+2700 -4400 [ 5150 -4400 ] PLine
+5150 -4400 [ 5250 -4300 ] PLine
+5250 -4300 [ 5450 -4300 ] PLine
+2400 -1900 [ 2400 -1800 ] PLine
+2400 -1800 [ 2800 -1800 ] PLine
+3000 -2200 [ 3025 -2175 ] PLine
+3025 -2175 [ 3025 -1875 ] PLine
+3025 -1875 [ 2950 -1800 ] PLine
+2950 -1800 [ 2800 -1800 ] PLine
+4400 -1200 [ 4400 -1100 ] PLine
+4400 -1100 [ 4100 -1100 ] PLine
+4100 -1100 [ 4100 -1200 ] PLine
+4400 -1100 [ 4700 -1100 ] PLine
+4700 -1100 [ 4700 -1200 ] PLine
+3600 -1200 [ 3600 -1300 ] PLine
+2900 -1700 [ 2900 -1300 ] PLine
+2800 -1700 [ 3050 -1700 ] PLine
+3050 -1700 [ 3150 -1800 ] PLine
+3150 -1800 [ 3200 -1800 ] PLine
+3200 -3700 [ 3150 -3750 ] PLine
+3150 -3750 [ 3100 -3750 ] PLine
+3100 -3750 [ 3100 -4025 ] PLine
+3100 -4025 [ 3125 -4050 ] PLine
+3125 -4050 [ 3150 -4050 ] PLine
+3150 -4050 [ 3200 -4100 ] PLine
+3100 -3750 [ 3075 -3750 ] PLine
+3075 -3750 [ 3050 -3725 ] PLine
+3050 -3725 [ 3050 -2850 ] PLine
+3050 -2850 [ 3075 -2825 ] PLine
+3075 -2825 [ 3125 -2825 ] PLine
+3125 -2825 [ 3150 -2800 ] PLine
+3150 -2800 [ 3150 -1800 ] PLine
+4100 -1100 [ 3600 -1100 ] PLine
+3600 -1100 [ 3600 -1200 ] PLine
+40 SetLine
+1400 -1000 [ 1400 -700 ] PLine
+1400 -700 [ 1100 -700 ] PLine
+1100 -700 [ 1000 -800 ] PLine
+1000 -800 [ 1000 -1000 ] PLine
+1400 -1150 [ 1400 -1300 ] PLine
+1400 -1300 [ 875 -1300 ] PLine
+875 -1300 [ 875 -1175 ] PLine
+4400 -1350 [ 4700 -1350 ] PLine
+4700 -1350 [ 4700 -1400 ] PLine
+3050 -800 [ 3050 -700 ] PLine
+3050 -700 [ 2900 -700 ] PLine
+2900 -700 [ 2900 -800 ] PLine
+2000 -1000 [ 2000 -1300 ] PLine
+2000 -1300 [ 1400 -1300 ] PLine
+4100 -2700 [ 3800 -2700 ] PLine
+3850 -1500 [ 3850 -1200 ] PLine
+3850 -1200 [ 3900 -1200 ] PLine
+3300 -2350 [ 3400 -2350 ] PLine
+3400 -2350 [ 3400 -1800 ] PLine
+3400 -2350 [ 3400 -3025 ] PLine
+3400 -3025 [ 3200 -3025 ] PLine
+2000 -1125 [ 2325 -1125 ] PLine
+2325 -1125 [ 2450 -1000 ] PLine
+3300 -1000 [ 2450 -1000 ] PLine
+2500 -3400 [ 2400 -3400 ] PLine
+2500 -3200 [ 2400 -3200 ] PLine
+2500 -3400 [ 2500 -3775 ] PLine
+2500 -3775 [ 2300 -3775 ] PLine
+2300 -3700 [ 2300 -3775 ] PLine
+4400 -1350 [ 3950 -1350 ] PLine
+3950 -1350 [ 3900 -1400 ] PLine
+3600 -1400 [ 3900 -1400 ] PLine
+2500 -2700 [ 2400 -2700 ] PLine
+2300 -3000 [ 2225 -3000 ] PLine
+2225 -3000 [ 2225 -3700 ] PLine
+2225 -3700 [ 2300 -3700 ] PLine
+2500 -3400 [ 2500 -2000 ] PLine
+2500 -2000 [ 2400 -2000 ] PLine
+3400 -1400 [ 3600 -1400 ] PLine
+3300 -1100 [ 3300 -800 ] PLine
+VMFlush
+40 SetLine
+0 0 60 /PRndPad SetFlash
+10 SetText2
+3300 -800 [ 3050 -800 ] PLine
+3400 -1800 [ 3400 -1125 ] PLine
+3400 -1125 [ 3375 -1100 ] PLine
+3375 -1100 [ 3300 -1100 ] PLine
+3850 -1500 [ 3850 -2700 ] PLine
+2300 -2200 [ 2225 -2200 ] PLine
+2225 -2200 [ 2225 -3000 ] PLine
+2500 -2400 [ 2400 -2400 ] PLine
+20 SetLine
+2812 -4262 [ 2800 -4250 ] PLine
+2800 -4250 [ 2800 -4100 ] PLine
+2800 -2925 [ 2800 -3025 ] PLine
+2800 -3025 [ 2925 -3125 ] PLine
+2925 -3125 [ 2925 -3975 ] PLine
+2925 -3975 [ 2900 -4000 ] PLine
+2900 -4000 [ 2800 -4000 ] PLine
+3600 -2650 [ 3600 -2200 ] PLine
+3525 -2750 [ 3525 -2100 ] PLine
+2925 -2850 [ 2925 -2475 ] PLine
+2700 -2900 [ 2700 -2550 ] PLine
+3200 -1400 [ 3200 -1300 ] PLine
+3200 -1300 [ 3200 -1200 ] PLine
+30 SetLine
+4100 -2800 [ 3950 -2800 ] PLine
+3950 -2800 [ 3850 -2900 ] PLine
+3850 -2900 [ 3800 -2900 ] PLine
+4000 -1500 [ 4075 -1500 ] PLine
+4075 -1500 [ 4275 -1700 ] PLine
+4275 -1700 [ 4275 -2725 ] PLine
+4275 -2725 [ 4200 -2800 ] PLine
+4200 -2800 [ 4100 -2800 ] PLine
+0 0 15 /PRndPad SetFlash
+2812 -4262 Flash
+0 0 45 /PRndPad SetFlash
+3600 -2650 Flash
+3600 -2200 Flash
+0 0 45 /PRndPad SetFlash
+3525 -2750 Flash
+3525 -2100 Flash
+0 0 45 /PRndPad SetFlash
+2925 -2850 Flash
+2925 -2475 Flash
+0 0 45 /PRndPad SetFlash
+2700 -2900 Flash
+2700 -2550 Flash
+VMRest
+grestore
+showpage
