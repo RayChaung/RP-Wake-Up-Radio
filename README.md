@@ -1,4 +1,4 @@
-Raspberry Pi Wake on Radio
+Raspberry Pi Wake-up Radio
 ==========================
 
 # Purpose
