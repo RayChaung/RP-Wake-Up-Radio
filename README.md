@@ -74,13 +74,11 @@ $ gpio edge <GPIO> rising
 # Documents
 
 * The add-on board's schematic can be found in
-[raspi_wake_on_radio_rtc.pdf](./Documents/circuit_schematic.pdf).
+[circuit_schematic.pdf](./Documents/circuit_schematic.pdf).
 
-* Radio telegram definition as well as transmission frame and DRX timing is shown in
-[radio_diagrams.odg](./Documents/radio_diagrams.odg).
+* The working PCB design diagram is shown in
+[PCB_design.ps](./Documents/PCB_design.ps).
 
-* RFM69(HCW) register settings are given in an overview in
-[RFM69Register.ods](./Documents/RFM69Register.ods).
 
 * IoT data transfer
 [Git link](https://github.com/RayChaung/IoT_Project.git) 
