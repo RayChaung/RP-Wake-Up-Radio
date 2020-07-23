@@ -74,7 +74,7 @@ $ gpio edge <GPIO> rising
 # Documents
 
 * The add-on board's schematic can be found in
-[raspi_wake_on_radio_rtc.pdf](./Documents/raspi_wake_on_radio_rtc.pdf).
+[raspi_wake_on_radio_rtc.pdf](./Documents/circuit_schematic.pdf).
 
 * Radio telegram definition as well as transmission frame and DRX timing is shown in
 [radio_diagrams.odg](./Documents/radio_diagrams.odg).
