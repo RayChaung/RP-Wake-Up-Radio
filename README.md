@@ -57,6 +57,12 @@ Any `RFID` is a 64 bit value entered as a colon separated sequence of 8 bytes
 ## rfwakes (not available now)
 wakeup all devices  
 
+using <I>code/waker.py<I> to wakeup device
+   
+wakeup list format (in code): 
+   
+   {'locationENG': 'receiver4', 'rfID': '11:11:11:11:11:11:11:14', 'ipAddr': '192.168.10.4', 'lat': 24.786715166666667, 'lng': 120.99349283333333, 'locationCH': 'receiver4'}
+
 # Some Error
 
 1. **Unable to open SPI device: No such file or directory**
