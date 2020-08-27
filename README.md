@@ -54,6 +54,9 @@ http://www.theunixschool.com/2012/06/insert-line-before-or-after-pattern.html
 Any `RFID` is a 64 bit value entered as a colon separated sequence of 8 bytes
 <B><I>b0:b1:b2:b3:b4:b5:b6:b7</I></B> in hex nomenclature.
 
+## rfwakes (not available now)
+wakeup all devices  
+
 # Some Error
 
 1. **Unable to open SPI device: No such file or directory**
