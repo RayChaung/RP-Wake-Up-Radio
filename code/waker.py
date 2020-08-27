@@ -50,57 +50,51 @@ def writelog(rfID, str):
     flog.write(str)
     flog.write("\n")
     flog.close()
-    
-db  = MySQLdb.connect("140.113.216.91", "cloud", "cloud2016", "ray", cursorclass=MySQLdb.cursors.DictCursor)
-#db  = MySQLdb.connect("140.113.216.91", "cloud", "cloud2016", "ray")
-sql = """SELECT * FROM `info` WHERE `locationENG` LIKE 'receiver%'"""
-cursor = db.cursor()
-cursor.execute(sql)
-data = cursor.fetchall()
-data = list(data)
 
+data = {'locationENG': 'receiver4', 'rfID': '11:11:11:11:11:11:11:14', 'ipAddr': '192.168.10.4', 'lat': 24.786715166666667, 'lng': 120.99349283333333, 'locationCH': 'receiver4'}
+#data = json.dumps(data)
+print(data)
 dict_time = {}
 
-for receiver in data:
-    writelog(receiver['rfID'], "----------------------------------------------------------------------------------------------------------")
+writelog(data['rfID'], "----------------------------------------------------------------------------------------------------------")
+receiver = data
 
 while data:
     #print(json.dumps(data, indent=4))
-    print( [i['locationENG'] for i in data])
-
-    for receiver in data:
-        dist = distance(readGPS(), receiver) 
-        if dist <= 400:
+    dist = distance(readGPS(), receiver) 
+    
+    # when IoT devices in wakeup range (not available now)
+    if dist <= 500:
             # first time wakeup and set timestamp in dictionary
-            if dict_time.get(receiver['rfID']) == None:
-                dict_time[receiver['rfID']] = time.time()
-            #print("Wakeup %s" % receiver['rfID'])
-            cmd = "/usr/local/bin/rfwake " + receiver['rfID']
-            print(cmd)
-            proc = subprocess.Popen(['/usr/local/bin/rfwake', receiver['rfID']], stdout=subprocess.PIPE)
+        if dict_time.get(receiver['rfID']) == None:
+            dict_time[receiver['rfID']] = time.time()
+        #print("Wakeup %s" % receiver['rfID'])
+        cmd = "/usr/local/bin/rfwake " + receiver['rfID']
+        print(cmd)
+        proc = subprocess.Popen(['/usr/local/bin/rfwake', receiver['rfID']], stdout=subprocess.PIPE)
 
-            expect = "ACK received from called Station RF ID" 
-            #+ receiver['rfID']
-            while True:
-                line = proc.stdout.readline()
-                if not line:
-                    print("Terminate process")
-                    break
-                if expect in line.decode().strip():  
-                    rfID = line.decode().strip().split(" ")[-1]
-                    startTime = time.time()
-                    if dict_time[rfID] != None:
-                        startTime = dict_time[rfID]
-                    endTime = time.time()
-                    escape  = endTime - startTime
-                    writelog(rfID, "escape: " + str(escape) + " sec")
-                    
-                    print("ACK received from %s" %(rfID))
+        expect = "ACK received from called Station RF ID" 
+        #+ receiver['rfID']
+        while True:
+            line = proc.stdout.readline()
+            if not line:
+                print("Terminate process")
+                break
+            if expect in line.decode().strip():  
+                rfID = line.decode().strip().split(" ")[-1]
+                startTime = time.time()
+                if dict_time[rfID] != None:
+                    startTime = dict_time[rfID]
+                endTime = time.time()
+                escape  = endTime - startTime
+                writelog(rfID, "escape: " + str(escape) + " sec")
+
+                print("ACK received from %s" %(rfID))
 
                     # remove rfID which received ACK
-                    data = [i for i in data if i['rfID'] != rfID]
-                    
+                    #data = [i for i in data if i['rfID'] != rfID]
+
                 #print(line.decode().strip())
-        else:
-            print("%fm out of range" % dist)
+    else:
+        print("%fm out of range" % dist)
 
